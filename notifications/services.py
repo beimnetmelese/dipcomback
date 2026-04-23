@@ -29,6 +29,8 @@ def notification_title_and_message(kind: str, item_name: str):
 		return f'Out of stock: {item_name}', f'{item_name} is now out of stock.'
 	if kind == Notification.Kind.STOCK_LOW:
 		return f'Low stock: {item_name}', f'{item_name} stock is below {LOW_STOCK_THRESHOLD}.'
+	if kind == Notification.Kind.SELLER_REGISTERED:
+		return 'New seller registered', f'{item_name} created a new seller account.'
 	if kind == Notification.Kind.RESERVATION_CREATED:
 		return 'New reservation request', f'A seller reserved {item_name}.'
 	if kind == Notification.Kind.RESERVATION_APPROVED:

@@ -4,6 +4,7 @@ from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from .models import AdminAccount, User
+from notifications.services import create_notifications
 
 
 class UserSummarySerializer(serializers.ModelSerializer):
@@ -47,6 +48,19 @@ class SellerCreateSerializer(serializers.ModelSerializer):
             phone_number=validated_data.get('phone_number', ''),
             role=User.Role.SELLER,
             seller_status=User.SellerStatus.PENDING,
+        )
+
+        admin_users = User.objects.filter(role=User.Role.ADMIN)
+        create_notifications(
+            admin_users,
+            kind='seller_registered',
+            item_name=user.display_name or user.business_name or user.email,
+            metadata={
+                'sellerId': str(user.id),
+                'sellerName': user.display_name,
+                'sellerEmail': user.email,
+                'targetPath': '/admin/sellers',
+            },
         )
         return user
 

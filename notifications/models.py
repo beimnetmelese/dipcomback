@@ -13,6 +13,7 @@ class Notification(models.Model):
 	class Kind(models.TextChoices):
 		STOCK_LOW = 'stock_low', 'Stock Low'
 		STOCK_OUT = 'stock_out', 'Stock Out'
+		SELLER_REGISTERED = 'seller_registered', 'Seller Registered'
 		RESERVATION_CREATED = 'reservation_created', 'Reservation Created'
 		RESERVATION_APPROVED = 'reservation_approved', 'Reservation Approved'
 		RESERVATION_REJECTED = 'reservation_rejected', 'Reservation Rejected'

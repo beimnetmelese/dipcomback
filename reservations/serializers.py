@@ -1,4 +1,4 @@
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 
 from django.db import transaction
 from django.utils import timezone
@@ -15,13 +15,21 @@ class ReservationSerializer(serializers.ModelSerializer):
     productId = serializers.CharField(source='product.id', read_only=True)
     sellerId = serializers.UUIDField(source='seller.id', read_only=True)
     productName = serializers.CharField(source='product_name', read_only=True)
+    brand = serializers.CharField(source='product.brand', read_only=True)
+    categoryName = serializers.CharField(source='product.category.name', read_only=True)
     sellerName = serializers.CharField(source='seller_name', read_only=True)
     baseTotal = serializers.DecimalField(source='base_total', max_digits=12, decimal_places=2, read_only=True)
     finalTotal = serializers.DecimalField(source='final_total', max_digits=12, decimal_places=2, read_only=True)
     discountPercent = serializers.DecimalField(source='discount_percent', max_digits=5, decimal_places=2, read_only=True)
+    unitPrice = serializers.SerializerMethodField()
     createdAt = serializers.DateTimeField(source='created_at', read_only=True)
     deliveredAt = serializers.DateTimeField(source='delivered_at', read_only=True)
     rejectedAt = serializers.DateTimeField(source='removed_at', read_only=True)
+
+    def get_unitPrice(self, obj):
+        if not obj.quantity:
+            return Decimal('0.00')
+        return (Decimal(obj.final_total) / Decimal(obj.quantity)).quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
 
     class Meta:
         model = Reservation
@@ -29,9 +37,12 @@ class ReservationSerializer(serializers.ModelSerializer):
             'id',
             'productId',
             'productName',
+            'brand',
+            'categoryName',
             'sellerId',
             'sellerName',
             'quantity',
+            'unitPrice',
             'baseTotal',
             'finalTotal',
             'discountPercent',

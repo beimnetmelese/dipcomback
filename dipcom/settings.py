@@ -10,7 +10,9 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
+import os
 from pathlib import Path
+from corsheaders.defaults import default_headers
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -25,7 +27,7 @@ SECRET_KEY = 'django-insecure-^$b#i@&ke46%un8*b)la3x^sou#2!=92$wu6aomh$a^3icqg7_
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["*"]
 
 
 # Application definition
@@ -130,7 +132,39 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 # CORS config (development-friendly)
-CORS_ALLOW_ALL_ORIGINS = True
+_default_cors_origins = [
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+]
+
+_cors_origins_from_env = [
+    origin.strip()
+    for origin in os.getenv('CORS_ALLOWED_ORIGINS', '').split(',')
+    if origin.strip()
+]
+
+CORS_ALLOWED_ORIGINS = _cors_origins_from_env or _default_cors_origins
+CORS_ALLOW_ALL_ORIGINS = DEBUG and not _cors_origins_from_env
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r'^https://[a-z0-9-]+\.ngrok-free\.app$',
+    r'^https://[a-z0-9-]+\.ngrok\.io$',
+    r'^http://localhost:\d+$',
+    r'^http://127\.0\.0\.1:\d+$',
+    r'^http://192\.168\.\d{1,3}\.\d{1,3}:\d+$',
+    r'^http://10\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+$',
+]
+
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    'ngrok-skip-browser-warning',
+]
+
+CSRF_TRUSTED_ORIGINS = list(dict.fromkeys(CORS_ALLOWED_ORIGINS + [
+    'https://*.ngrok-free.app',
+    'https://*.ngrok.io',
+]))
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [

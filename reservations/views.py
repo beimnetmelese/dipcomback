@@ -16,16 +16,20 @@ from .serializers import ReservationCreateSerializer, ReservationSerializer
 
 
 class ReservationViewSet(viewsets.ModelViewSet):
-    queryset = Reservation.objects.select_related('product', 'seller').all()
+    queryset = Reservation.objects.select_related('product', 'product__category', 'seller').all()
     serializer_class = ReservationSerializer
 
     def get_permissions(self):
-        if self.action in {'list', 'retrieve'}:
-            return [permissions.IsAuthenticated()]
+        if self.action in {'public_by_seller_phone', 'public_update_status'}:
+            return [permissions.AllowAny()]
         return [permissions.IsAuthenticated()]
 
     def get_queryset(self):
         queryset = super().get_queryset()
+
+        if self.action in {'public_by_seller_phone', 'public_update_status'}:
+            return queryset.order_by('-created_at')
+
         user = self.request.user
 
         if user.role not in {'admin', 'staff'}:
@@ -163,5 +167,78 @@ class ReservationViewSet(viewsets.ModelViewSet):
         )
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
+
+    @action(
+        detail=False,
+        methods=['get'],
+        authentication_classes=[],
+        permission_classes=[permissions.AllowAny],
+        url_path='public/by-seller-phone',
+    )
+    def public_by_seller_phone(self, request):
+        phone_number = request.query_params.get('phoneNumber', '').strip()
+        if not phone_number:
+            raise ValidationError({'phoneNumber': 'This query parameter is required.'})
+
+        queryset = (
+            Reservation.objects.select_related('product', 'seller')
+            .filter(seller__phone_number=phone_number)
+            .exclude(status=Reservation.Status.DELIVERED)
+            .order_by('-created_at')
+        )
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+    @action(
+        detail=True,
+        methods=['patch'],
+        authentication_classes=[],
+        permission_classes=[permissions.AllowAny],
+        url_path='public/status',
+    )
+    def public_update_status(self, request, pk=None):
+        reservation = self.get_object()
+        next_status = str(request.data.get('status', '')).strip().lower()
+        allowed_statuses = {choice[0] for choice in Reservation.Status.choices}
+
+        if next_status not in allowed_statuses:
+            raise ValidationError({'status': f'Invalid status. Allowed values: {sorted(allowed_statuses)}'})
+
+        with transaction.atomic():
+            reservation = (
+                Reservation.objects.select_for_update()
+                .select_related('product')
+                .get(pk=reservation.pk)
+            )
+
+            current_status = reservation.status
+            if current_status == next_status:
+                return Response(self.get_serializer(reservation).data)
+
+            if current_status == Reservation.Status.REJECTED and next_status != Reservation.Status.REJECTED:
+                previous_stock = int(reservation.product.stock)
+                required_stock = int(reservation.quantity)
+                if previous_stock < required_stock:
+                    raise ValidationError({'status': 'Not enough stock to move reservation out of rejected status.'})
+                reservation.product.stock = previous_stock - required_stock
+                reservation.product.save(update_fields=['stock'])
+
+            if next_status == Reservation.Status.REJECTED and current_status != Reservation.Status.REJECTED:
+                previous_stock = int(reservation.product.stock)
+                reservation.product.stock = previous_stock + int(reservation.quantity)
+                reservation.product.save(update_fields=['stock'])
+                reservation.removed_at = timezone.now()
+            elif next_status != Reservation.Status.REJECTED:
+                reservation.removed_at = None
+
+            if next_status == Reservation.Status.DELIVERED:
+                reservation.delivered_at = timezone.now()
+            elif next_status != Reservation.Status.DELIVERED:
+                reservation.delivered_at = None
+
+            reservation.status = next_status
+            reservation.save(update_fields=['status', 'delivered_at', 'removed_at'])
+
+        return Response(self.get_serializer(reservation).data)
 
 # Create your views here.

@@ -1,4 +1,8 @@
-from rest_framework import permissions, viewsets
+from django.db import transaction
+from rest_framework import permissions, status, viewsets
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from rest_framework.exceptions import ValidationError
 
 from accounts.models import User
 from accounts.permissions import IsAdminOrStaff, ReadOnlyOrAdminStaff
@@ -38,7 +42,7 @@ class ProductViewSet(viewsets.ModelViewSet):
         return ProductSerializer
 
     def get_permissions(self):
-        if self.action in {'list', 'retrieve'}:
+        if self.action in {'list', 'retrieve', 'subtract_stock'}:
             return [permissions.AllowAny()]
         return [permissions.IsAuthenticated(), IsAdminOrStaff()]
 
@@ -93,6 +97,52 @@ class ProductViewSet(viewsets.ModelViewSet):
                 'targetPath': '/admin/products',
             },
         )
+
+    @action(
+        detail=True,
+        methods=['post'],
+        url_path='subtract-stock',
+        authentication_classes=[],
+        permission_classes=[permissions.AllowAny],
+    )
+    def subtract_stock(self, request, pk=None):
+        product = self.get_object()
+        raw_units = request.data.get('unit', request.data.get('units'))
+
+        try:
+            units = int(raw_units)
+        except (TypeError, ValueError) as exc:
+            raise ValidationError({'unit': 'unit must be a positive integer.'}) from exc
+
+        if units < 1:
+            raise ValidationError({'unit': 'unit must be at least 1.'})
+
+        with transaction.atomic():
+            product = Product.objects.select_for_update().get(pk=product.pk)
+            previous_stock = int(product.stock)
+
+            if units > previous_stock:
+                raise ValidationError({'unit': 'Not enough stock to subtract the requested units.'})
+
+            product.stock = previous_stock - units
+            product.save(update_fields=['stock', 'updated_at'])
+
+        notify_stock_change(
+            users=User.objects.filter(role__in=[User.Role.ADMIN, User.Role.STAFF]),
+            item_name=product.name,
+            old_stock=previous_stock,
+            new_stock=int(product.stock),
+            metadata={
+                'itemType': 'product',
+                'itemId': product.id,
+                'categoryId': product.category_id,
+                'targetPath': '/admin/products',
+                'changeType': 'subtract_stock',
+                'units': units,
+            },
+        )
+
+        return Response(self.get_serializer(product).data, status=status.HTTP_200_OK)
 
 
 class SellerProductViewSet(viewsets.ModelViewSet):
@@ -194,3 +244,50 @@ class SellerProductViewSet(viewsets.ModelViewSet):
                 'targetPath': '/seller/products',
             },
         )
+
+    @action(detail=True, methods=['post'], url_path='subtract-stock')
+    def subtract_stock(self, request, pk=None):
+        product = self.get_object()
+        raw_units = request.data.get('unit', request.data.get('units'))
+
+        try:
+            units = int(raw_units)
+        except (TypeError, ValueError) as exc:
+            raise ValidationError({'unit': 'unit must be a positive integer.'}) from exc
+
+        if units < 1:
+            raise ValidationError({'unit': 'unit must be at least 1.'})
+
+        if request.user.role not in {'seller', 'admin'} and not request.user.is_staff:
+            raise ValidationError({'detail': 'You do not have permission to subtract this stock.'})
+
+        if request.user.role == 'seller' and str(product.seller_id) != str(request.user.id):
+            raise ValidationError({'detail': 'You can only update your own stock.'})
+
+        with transaction.atomic():
+            product = SellerProduct.objects.select_for_update().get(pk=product.pk)
+            previous_stock = int(product.stock)
+
+            if units > previous_stock:
+                raise ValidationError({'unit': 'Not enough stock to subtract the requested units.'})
+
+            product.stock = previous_stock - units
+            product.save(update_fields=['stock', 'updated_at'])
+
+        notify_stock_change(
+            users=[product.seller],
+            item_name=product.name,
+            old_stock=previous_stock,
+            new_stock=int(product.stock),
+            metadata={
+                'itemType': 'seller_product',
+                'itemId': product.id,
+                'categoryId': product.category_id,
+                'sellerId': str(product.seller_id),
+                'targetPath': '/seller/products',
+                'changeType': 'subtract_stock',
+                'units': units,
+            },
+        )
+
+        return Response(self.get_serializer(product).data, status=status.HTTP_200_OK)
