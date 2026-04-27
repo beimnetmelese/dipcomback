@@ -42,7 +42,7 @@ class ProductViewSet(viewsets.ModelViewSet):
         return ProductSerializer
 
     def get_permissions(self):
-        if self.action in {'list', 'retrieve', 'subtract_stock'}:
+        if self.action in {'list', 'retrieve', 'subtract_stock', 'add_stock'}:
             return [permissions.AllowAny()]
         return [permissions.IsAuthenticated(), IsAdminOrStaff()]
 
@@ -138,6 +138,48 @@ class ProductViewSet(viewsets.ModelViewSet):
                 'categoryId': product.category_id,
                 'targetPath': '/admin/products',
                 'changeType': 'subtract_stock',
+                'units': units,
+            },
+        )
+
+        return Response(self.get_serializer(product).data, status=status.HTTP_200_OK)
+
+    @action(
+        detail=True,
+        methods=['post'],
+        url_path='add-stock',
+        authentication_classes=[],
+        permission_classes=[permissions.AllowAny],
+    )
+    def add_stock(self, request, pk=None):
+        product = self.get_object()
+        raw_units = request.data.get('unit', request.data.get('units'))
+
+        try:
+            units = int(raw_units)
+        except (TypeError, ValueError) as exc:
+            raise ValidationError({'unit': 'unit must be a positive integer.'}) from exc
+
+        if units < 1:
+            raise ValidationError({'unit': 'unit must be at least 1.'})
+
+        with transaction.atomic():
+            product = Product.objects.select_for_update().get(pk=product.pk)
+            previous_stock = int(product.stock)
+            product.stock = previous_stock + units
+            product.save(update_fields=['stock', 'updated_at'])
+
+        notify_stock_change(
+            users=User.objects.filter(role__in=[User.Role.ADMIN, User.Role.STAFF]),
+            item_name=product.name,
+            old_stock=previous_stock,
+            new_stock=int(product.stock),
+            metadata={
+                'itemType': 'product',
+                'itemId': product.id,
+                'categoryId': product.category_id,
+                'targetPath': '/admin/products',
+                'changeType': 'add_stock',
                 'units': units,
             },
         )
