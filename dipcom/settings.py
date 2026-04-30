@@ -174,35 +174,14 @@ STORAGES = {
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-# CORS config (development-friendly)
-_default_cors_origins = [
-    'http://localhost:5173',
-    'http://127.0.0.1:5173',
-    'http://localhost:3000',
-    'http://127.0.0.1:3000',
-]
-
-_cors_origins_from_env = get_env_list('CORS_ALLOWED_ORIGINS')
-
-CORS_ALLOWED_ORIGINS = _cors_origins_from_env or (_default_cors_origins if DEBUG else [])
-CORS_ALLOW_ALL_ORIGINS = get_env_bool('CORS_ALLOW_ALL_ORIGINS', False)
-CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOWED_ORIGIN_REGEXES = [
-    r'^https://[a-z0-9-]+\.ngrok-free\.app$',
-    r'^https://[a-z0-9-]+\.ngrok\.io$',
-    r'^http://localhost:\d+$',
-    r'^http://127\.0\.0\.1:\d+$',
-    r'^http://192\.168\.\d{1,3}\.\d{1,3}:\d+$',
-    r'^http://10\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+$',
-]
+# CORS config
+CORS_ALLOW_ALL_ORIGINS = True
 
 CORS_ALLOW_HEADERS = list(default_headers) + [
     'ngrok-skip-browser-warning',
 ]
 
-CSRF_TRUSTED_ORIGINS = list(dict.fromkeys(
-    get_env_list('CSRF_TRUSTED_ORIGINS') + CORS_ALLOWED_ORIGINS
-))
+CSRF_TRUSTED_ORIGINS = get_env_list('CSRF_TRUSTED_ORIGINS')
 
 if DEBUG:
     CSRF_TRUSTED_ORIGINS = list(dict.fromkeys(CSRF_TRUSTED_ORIGINS + [
