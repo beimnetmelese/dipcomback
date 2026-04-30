@@ -10,7 +10,7 @@ class PlatformSettingsSerializer(serializers.ModelSerializer):
     contactAddress = serializers.CharField(source='contact_address', allow_blank=True, required=False)
     businessHours = serializers.CharField(source='business_hours', allow_blank=True, required=False)
     tiktokUrl = serializers.URLField(source='tiktok_url', allow_blank=True, required=False)
-    mapUrl = serializers.URLField(source='map_url', allow_blank=True, required=False)
+    mapUrl = serializers.URLField(source='map_url', allow_blank=True, required=False, max_length=2000)
     heroTagline = serializers.CharField(source='hero_tagline', allow_blank=True, required=False)
     heroTitle = serializers.CharField(source='hero_title', allow_blank=True, required=False)
     heroDescription = serializers.CharField(source='hero_description', allow_blank=True, required=False)
