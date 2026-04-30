@@ -52,16 +52,16 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         settings = PlatformSettings.get_solo()
         settings.commission_percent = Decimal('10')
-        settings.contact_phone = '+1 (555) 900-1001'
-        settings.contact_address = 'Next to CBE Temenja Yaj branch, Kirkos sub city woreda 11, Addis Ababa'
-        settings.business_hours = 'Monday - Saturday, 8:30 AM - 6:00 PM'
-        settings.tiktok_url = 'https://www.tiktok.com/@dipcomtechnologies'
-        settings.map_url = 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3940.728265867298!2d38.75657401086354!3d8.99713269102569!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x164b8584482eab63%3A0x2c55bad0b8eff98a!2sDipcom%20Technology%20Solutions!5e0!3m2!1sen!2set!4v1775917748282!5m2!1sen!2set'
-        settings.hero_tagline = 'Stock Management & Reseller System'
-        settings.hero_title = 'Import printers, repair devices, and train teams with a premium business platform.'
-        settings.hero_description = 'This public landing page introduces the full service story behind the system: printer imports, repairs, training, and a modern reseller experience.'
-        settings.about_title = '18 years of trusted printer importing, repair, and training expertise.'
-        settings.about_description = 'DIPCOM Technologies is a seasoned service provider with more than 18 years of experience in printer importing, printer repair, and practical training.'
+        settings.contact_phone = '555-900-1001'
+        settings.contact_address = 'Addis Ababa'
+        settings.business_hours = 'Mon-Sat, 8:30-6:00'
+        settings.tiktok_url = 'https://tiktok.com/@dipcom'
+        settings.map_url = 'https://maps.google.com/?q=Dipcom'
+        settings.hero_tagline = 'Stock Management'
+        settings.hero_title = 'Simple business platform.'
+        settings.hero_description = 'Demo landing page.'
+        settings.about_title = '18 years of experience.'
+        settings.about_description = 'Short demo text.'
         settings.years_experience = 18
         settings.students_trained = 200
         settings.save()
@@ -107,7 +107,6 @@ class Command(BaseCommand):
 
         admin_accounts = [
             ('Platform Admin', 'admin@test.com', 'Super Admin', '2026-01-01T00:00:00Z'),
-            ('Operations Lead', 'ops@dipcomtechnologies.com', 'Operations Admin', '2026-01-18T00:00:00Z'),
         ]
         for name, email, role, joined_at in admin_accounts:
             AdminAccount.objects.update_or_create(
@@ -134,10 +133,7 @@ class Command(BaseCommand):
             product_lookup[item['id']] = product
 
         seller_products = [
-            {'id': 'sp1', 'seller_id': 's1', 'name': 'Core Label Tape Pack', 'price': '38', 'stock': 42, 'brand': 'Core Retail Hub', 'category_id': 'c2', 'image_url': 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=900&q=80'},
-            {'id': 'sp2', 'seller_id': 's1', 'name': 'Office Ink Multi Kit', 'price': '112', 'stock': 8, 'brand': 'Core Retail Hub', 'category_id': 'c2', 'image_url': 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=900&q=80'},
-            {'id': 'sp3', 'seller_id': 's1', 'name': 'Compact Receipt Printer', 'price': '178', 'stock': 3, 'brand': 'Core Retail Hub', 'category_id': 'c1', 'image_url': 'https://images.unsplash.com/photo-1628167343682-1f6d7b2e1b5d?auto=format&fit=crop&w=900&q=80'},
-            {'id': 'sp4', 'seller_id': 's2', 'name': 'Al Noor Barcode Stickers', 'price': '46', 'stock': 18, 'brand': 'Al Noor Supplies', 'category_id': 'c2', 'image_url': 'https://images.unsplash.com/photo-1516542076529-1ea3854896c4?auto=format&fit=crop&w=900&q=80'},
+            {'id': 'sp1', 'seller_id': 's1', 'name': 'Label Tape Pack', 'price': '38', 'stock': 12, 'brand': 'Core Retail Hub', 'category_id': 'c2', 'image_url': 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=900&q=80'},
         ]
         for item in seller_products:
             created_at_raw = item.get('created_at')

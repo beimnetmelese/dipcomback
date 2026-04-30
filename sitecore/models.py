@@ -7,7 +7,7 @@ class PlatformSettings(models.Model):
 	contact_address = models.CharField(max_length=255, blank=True)
 	business_hours = models.CharField(max_length=120, blank=True)
 	tiktok_url = models.URLField(blank=True)
-	map_url = models.URLField(max_length=2000, blank=True)
+	map_url = models.URLField(blank=True)
 	hero_tagline = models.CharField(max_length=255, blank=True)
 	hero_title = models.CharField(max_length=255, blank=True)
 	hero_description = models.TextField(blank=True)
