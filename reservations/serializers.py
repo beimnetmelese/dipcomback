@@ -81,7 +81,11 @@ class ReservationCreateSerializer(serializers.Serializer):
         from sitecore.models import PlatformSettings
 
         settings = PlatformSettings.get_solo()
-        discount_percent = Decimal(settings.commission_percent)
+        discount_percent = (
+            seller.seller_discount_percent
+            if seller.seller_discount_percent is not None
+            else Decimal(settings.commission_percent)
+        )
         base_total = Decimal(product.price) * Decimal(quantity)
         final_total = base_total * (Decimal('1') - discount_percent / Decimal('100'))
         admin_staff_users = User.objects.filter(role__in=[User.Role.ADMIN, User.Role.STAFF])

@@ -17,6 +17,7 @@ class UserManager(BaseUserManager):
 		email = self.normalize_email(email)
 		extra_fields.setdefault('role', User.Role.SELLER)
 		extra_fields.setdefault('seller_status', User.SellerStatus.PENDING)
+		extra_fields.setdefault('seller_discount_percent', 0)
 		extra_fields.setdefault('display_name', '')
 
 		user = self.model(email=email, **extra_fields)
@@ -60,6 +61,7 @@ class User(AbstractUser):
 		choices=SellerStatus.choices,
 		default=SellerStatus.PENDING,
 	)
+	seller_discount_percent = models.DecimalField(max_digits=5, decimal_places=2, default=10)
 
 	objects = UserManager()
 

@@ -45,7 +45,7 @@ class SellerRegistrationView(CreateAPIView):
 class SellerViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated, IsAdminOrStaff]
     serializer_class = UserSummarySerializer
-    http_method_names = ['get', 'delete', 'post', 'head', 'options']
+    http_method_names = ['get', 'put', 'patch', 'delete', 'post', 'head', 'options']
 
     def get_queryset(self):
         queryset = User.objects.filter(role=User.Role.SELLER).order_by('-date_joined')

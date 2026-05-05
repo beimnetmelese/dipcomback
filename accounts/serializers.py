@@ -5,6 +5,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from .models import AdminAccount, User
 from notifications.services import create_notifications
+from sitecore.models import PlatformSettings
 
 
 class UserSummarySerializer(serializers.ModelSerializer):
@@ -12,6 +13,14 @@ class UserSummarySerializer(serializers.ModelSerializer):
     businessName = serializers.CharField(source='business_name', required=False, allow_blank=True)
     phoneNumber = serializers.CharField(source='phone_number', required=False)
     sellerStatus = serializers.CharField(source='seller_status', read_only=True)
+    sellerDiscountPercent = serializers.DecimalField(
+        source='seller_discount_percent',
+        max_digits=5,
+        decimal_places=2,
+        min_value=0,
+        max_value=50,
+        required=False,
+    )
     joinedAt = serializers.DateTimeField(source='date_joined', read_only=True)
 
     class Meta:
@@ -24,6 +33,7 @@ class UserSummarySerializer(serializers.ModelSerializer):
             'businessName',
             'phoneNumber',
             'sellerStatus',
+            'sellerDiscountPercent',
             'joinedAt',
         ]
 
@@ -46,6 +56,7 @@ class SellerCreateSerializer(serializers.ModelSerializer):
             display_name=validated_data.get('display_name', ''),
             business_name=validated_data.get('business_name', ''),
             phone_number=validated_data.get('phone_number', ''),
+            seller_discount_percent=PlatformSettings.get_solo().commission_percent,
             role=User.Role.SELLER,
             seller_status=User.SellerStatus.PENDING,
         )

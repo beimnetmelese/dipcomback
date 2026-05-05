@@ -32,9 +32,9 @@ CATEGORIES = [
 ]
 
 SELLERS = [
-    {'id': 's1', 'name': 'Core Retail Hub', 'email': 'seller@test.com', 'business_name': 'Core Retail Hub', 'password': '123456', 'status': User.SellerStatus.APPROVED, 'joined_at': '2026-01-02T00:00:00Z'},
-    {'id': 's2', 'name': 'Al Noor Supplies', 'email': 'alnoor@example.com', 'business_name': 'Al Noor Supplies', 'password': 'pass123', 'status': User.SellerStatus.APPROVED, 'joined_at': '2026-01-16T00:00:00Z'},
-    {'id': 's3', 'name': 'Tech Station', 'email': 'techstation@example.com', 'business_name': 'Tech Station', 'password': 'pass123', 'status': User.SellerStatus.PENDING, 'joined_at': '2026-03-02T00:00:00Z'},
+    {'id': 's1', 'name': 'Core Retail Hub', 'email': 'seller@test.com', 'business_name': 'Core Retail Hub', 'password': '123456', 'status': User.SellerStatus.APPROVED, 'discount_percent': Decimal('10'), 'joined_at': '2026-01-02T00:00:00Z'},
+    {'id': 's2', 'name': 'Al Noor Supplies', 'email': 'alnoor@example.com', 'business_name': 'Al Noor Supplies', 'password': 'pass123', 'status': User.SellerStatus.APPROVED, 'discount_percent': Decimal('12'), 'joined_at': '2026-01-16T00:00:00Z'},
+    {'id': 's3', 'name': 'Tech Station', 'email': 'techstation@example.com', 'business_name': 'Tech Station', 'password': 'pass123', 'status': User.SellerStatus.PENDING, 'discount_percent': Decimal('8'), 'joined_at': '2026-03-02T00:00:00Z'},
 ]
 
 RESERVATIONS = [
@@ -82,23 +82,25 @@ class Command(BaseCommand):
             ('Reservations Staff', 'staff@test.com', User.Role.STAFF),
             ('Core Retail Hub', 'seller@test.com', User.Role.SELLER),
         ]:
-            user, _ = User.objects.get_or_create(email=email, defaults={'display_name': name, 'role': role, 'seller_status': User.SellerStatus.APPROVED if role != User.Role.SELLER else User.SellerStatus.APPROVED, 'business_name': name if role == User.Role.SELLER else ''})
+            user, _ = User.objects.get_or_create(email=email, defaults={'display_name': name, 'role': role, 'seller_status': User.SellerStatus.APPROVED if role != User.Role.SELLER else User.SellerStatus.APPROVED, 'business_name': name if role == User.Role.SELLER else '', 'seller_discount_percent': Decimal('10') if role == User.Role.SELLER else Decimal('0')})
             user.display_name = name
             user.role = role
             user.business_name = name if role == User.Role.SELLER else ''
             user.seller_status = User.SellerStatus.APPROVED if role != User.Role.SELLER else User.SellerStatus.APPROVED
             user.is_staff = role in {User.Role.ADMIN, User.Role.STAFF}
             user.is_superuser = role == User.Role.ADMIN
+            user.seller_discount_percent = Decimal('10') if role == User.Role.SELLER else Decimal('0')
             user.set_password('123456')
             user.save()
 
         seller_lookup = {}
         for seller in SELLERS:
-            user, _ = User.objects.get_or_create(email=seller['email'], defaults={'display_name': seller['name'], 'business_name': seller['business_name'], 'role': User.Role.SELLER, 'seller_status': seller['status']})
+            user, _ = User.objects.get_or_create(email=seller['email'], defaults={'display_name': seller['name'], 'business_name': seller['business_name'], 'role': User.Role.SELLER, 'seller_status': seller['status'], 'seller_discount_percent': seller['discount_percent']})
             user.display_name = seller['name']
             user.business_name = seller['business_name']
             user.role = User.Role.SELLER
             user.seller_status = seller['status']
+            user.seller_discount_percent = seller['discount_percent']
             user.is_staff = False
             user.is_superuser = False
             user.set_password(seller['password'])
