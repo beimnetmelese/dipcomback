@@ -188,3 +188,19 @@ class EmailTokenObtainPairSerializer(serializers.Serializer):
 class CurrentUserSerializer(UserSummarySerializer):
     class Meta(UserSummarySerializer.Meta):
         fields = UserSummarySerializer.Meta.fields
+
+    def update(self, instance, validated_data):
+        request = self.context.get('request')
+        if request and request.user.role == User.Role.SELLER:
+            if request.user.seller_status != User.SellerStatus.REJECTED:
+                raise serializers.ValidationError({'detail': 'Only rejected seller accounts can resubmit profile updates.'})
+
+            instance.seller_status = User.SellerStatus.PENDING
+            instance.rejection_reason = ''
+            instance.rejected_at = None
+            instance.removal_reason = ''
+            instance.removed_at = None
+            instance.is_removed = False
+            instance.is_active = True
+
+        return super().update(instance, validated_data)

@@ -1,6 +1,6 @@
 from rest_framework import viewsets
 from rest_framework.decorators import action
-from rest_framework.generics import CreateAPIView, RetrieveAPIView
+from rest_framework.generics import CreateAPIView, RetrieveUpdateAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
@@ -31,7 +31,7 @@ class LoginView(APIView):
         return Response(serializer.validated_data)
 
 
-class CurrentUserView(RetrieveAPIView):
+class CurrentUserView(RetrieveUpdateAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = CurrentUserSerializer
 
