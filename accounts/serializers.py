@@ -14,7 +14,10 @@ class UserSummarySerializer(serializers.ModelSerializer):
     phoneNumber = serializers.CharField(source='phone_number', required=False)
     location = serializers.CharField(required=False)
     tinNumber = serializers.CharField(source='tin_number', required=False)
-    sellerStatus = serializers.CharField(source='seller_status', read_only=True)
+    sellerStatus = serializers.SerializerMethodField()
+    removed = serializers.BooleanField(source='is_removed', read_only=True)
+    removalReason = serializers.CharField(source='removal_reason', read_only=True)
+    removedAt = serializers.DateTimeField(source='removed_at', read_only=True)
     sellerDiscountPercent = serializers.DecimalField(
         source='seller_discount_percent',
         max_digits=5,
@@ -37,9 +40,15 @@ class UserSummarySerializer(serializers.ModelSerializer):
             'location',
             'tinNumber',
             'sellerStatus',
+            'removed',
+            'removalReason',
+            'removedAt',
             'sellerDiscountPercent',
             'joinedAt',
         ]
+
+    def get_sellerStatus(self, instance):
+        return 'removed' if getattr(instance, 'is_removed', False) else instance.seller_status
 
 
 class SellerCreateSerializer(serializers.ModelSerializer):

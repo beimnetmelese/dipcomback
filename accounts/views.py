@@ -2,6 +2,7 @@ from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.generics import CreateAPIView, RetrieveAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.utils import timezone
@@ -56,14 +57,21 @@ class SellerViewSet(viewsets.ModelViewSet):
         if query:
             queryset = queryset.filter(display_name__icontains=query) | queryset.filter(business_name__icontains=query) | queryset.filter(email__icontains=query)
 
-        if status_filter in {User.SellerStatus.PENDING, User.SellerStatus.APPROVED, User.SellerStatus.REJECTED}:
+        if status_filter == 'removed':
+            queryset = queryset.filter(is_removed=True)
+        elif status_filter in {User.SellerStatus.PENDING, User.SellerStatus.APPROVED, User.SellerStatus.REJECTED}:
             queryset = queryset.filter(seller_status=status_filter)
 
         return queryset.distinct()
 
+    def _ensure_not_removed(self, seller):
+        if seller.is_removed:
+            raise ValidationError({'detail': 'Removed sellers must be reactivated before any other action.'})
+
     @action(detail=True, methods=['post'])
     def approve(self, request, pk=None):
         seller = self.get_object()
+        self._ensure_not_removed(seller)
         seller.seller_status = User.SellerStatus.APPROVED
         seller.save(update_fields=['seller_status'])
         return Response(self.get_serializer(seller).data)
@@ -71,6 +79,7 @@ class SellerViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def reject(self, request, pk=None):
         seller = self.get_object()
+        self._ensure_not_removed(seller)
         seller.seller_status = User.SellerStatus.REJECTED
         seller.save(update_fields=['seller_status'])
         return Response(self.get_serializer(seller).data)
@@ -78,12 +87,24 @@ class SellerViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def remove(self, request, pk=None):
         seller = self.get_object()
+        self._ensure_not_removed(seller)
         reason = str(request.data.get('reason', '')).strip()
         seller.is_removed = True
         seller.removal_reason = reason
         seller.removed_at = timezone.now()
         seller.is_active = False
         seller.seller_status = User.SellerStatus.REJECTED
+        seller.save(update_fields=['is_removed', 'removal_reason', 'removed_at', 'is_active', 'seller_status'])
+        return Response(self.get_serializer(seller).data)
+
+    @action(detail=True, methods=['post'])
+    def reactivate(self, request, pk=None):
+        seller = self.get_object()
+        seller.is_removed = False
+        seller.removal_reason = ''
+        seller.removed_at = None
+        seller.is_active = True
+        seller.seller_status = User.SellerStatus.APPROVED
         seller.save(update_fields=['is_removed', 'removal_reason', 'removed_at', 'is_active', 'seller_status'])
         return Response(self.get_serializer(seller).data)
 
