@@ -12,7 +12,7 @@ class UserSummarySerializer(serializers.ModelSerializer):
     name = serializers.CharField(source='display_name')
     businessName = serializers.CharField(source='business_name', required=False, allow_blank=True)
     phoneNumber = serializers.CharField(source='phone_number', required=False)
-    location = serializers.CharField(source='location', required=False)
+    location = serializers.CharField(required=False)
     tinNumber = serializers.CharField(source='tin_number', required=False)
     sellerStatus = serializers.CharField(source='seller_status', read_only=True)
     sellerDiscountPercent = serializers.DecimalField(
@@ -46,7 +46,7 @@ class SellerCreateSerializer(serializers.ModelSerializer):
     name = serializers.CharField(source='display_name')
     businessName = serializers.CharField(source='business_name')
     phoneNumber = serializers.CharField(source='phone_number', required=True, allow_blank=False)
-    location = serializers.CharField(source='location', required=True, allow_blank=False)
+    location = serializers.CharField(required=True, allow_blank=False)
     tinNumber = serializers.CharField(source='tin_number', required=True, allow_blank=False)
     password = serializers.CharField(write_only=True, min_length=6)
 
