@@ -14,6 +14,11 @@ class CatalogItemBase(models.Model):
 	price = models.DecimalField(max_digits=10, decimal_places=2)
 	stock = models.PositiveIntegerField(default=0)
 	brand = models.CharField(max_length=120)
+	class Condition(models.TextChoices):
+		NEW = 'new', 'Brand New'
+		USED = 'used', 'Used'
+
+	condition = models.CharField(max_length=12, choices=Condition.choices, default=Condition.NEW)
 	image_url = models.ImageField(upload_to='catalog/', blank=True, null=True, max_length=500)
 	created_at = models.DateTimeField(auto_now_add=True)
 	updated_at = models.DateTimeField(auto_now=True)

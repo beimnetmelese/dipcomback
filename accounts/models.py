@@ -55,6 +55,8 @@ class User(AbstractUser):
 	display_name = models.CharField(max_length=150, blank=True)
 	business_name = models.CharField(max_length=255, blank=True)
 	phone_number = models.CharField(max_length=30, default='+251900000000')
+	location = models.CharField(max_length=255, default='Addis Ababa')
+	tin_number = models.CharField(max_length=32, default='000000000')
 	role = models.CharField(max_length=20, choices=Role.choices, default=Role.SELLER)
 	seller_status = models.CharField(
 		max_length=20,
@@ -62,6 +64,10 @@ class User(AbstractUser):
 		default=SellerStatus.PENDING,
 	)
 	seller_discount_percent = models.DecimalField(max_digits=5, decimal_places=2, default=10)
+	# removal tracking when an admin removes or deactivates a seller
+	is_removed = models.BooleanField(default=False)
+	removal_reason = models.TextField(blank=True, default='')
+	removed_at = models.DateTimeField(null=True, blank=True)
 
 	objects = UserManager()
 

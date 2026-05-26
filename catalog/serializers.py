@@ -18,6 +18,7 @@ class ProductSerializer(serializers.ModelSerializer):
     imageUrl = serializers.SerializerMethodField()
     categoryId = serializers.CharField(source='category.id', read_only=True)
     category = serializers.CharField(source='category.name', read_only=True)
+    condition = serializers.CharField(read_only=True)
     createdAt = serializers.DateTimeField(source='created_at', read_only=True)
     updatedAt = serializers.DateTimeField(source='updated_at', read_only=True)
 
@@ -29,6 +30,7 @@ class ProductSerializer(serializers.ModelSerializer):
             'price',
             'stock',
             'brand',
+            'condition',
             'category',
             'categoryId',
             'imageUrl',
@@ -61,6 +63,7 @@ class ProductWriteSerializer(serializers.ModelSerializer):
             'brand',
             'categoryId',
             'imageFile',
+            'condition',
         ]
 
     def _resolve_category(self, category_id: str):
@@ -98,6 +101,7 @@ class SellerProductSerializer(serializers.ModelSerializer):
             'price',
             'stock',
             'brand',
+            'condition',
             'category',
             'categoryId',
             'imageUrl',
@@ -137,6 +141,7 @@ class SellerProductWriteSerializer(serializers.ModelSerializer):
             'brand',
             'categoryId',
             'imageFile',
+            'condition',
         ]
 
     def _resolve_category(self, category_id: str):

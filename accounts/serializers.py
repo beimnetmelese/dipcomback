@@ -12,6 +12,8 @@ class UserSummarySerializer(serializers.ModelSerializer):
     name = serializers.CharField(source='display_name')
     businessName = serializers.CharField(source='business_name', required=False, allow_blank=True)
     phoneNumber = serializers.CharField(source='phone_number', required=False)
+    location = serializers.CharField(source='location', required=False)
+    tinNumber = serializers.CharField(source='tin_number', required=False)
     sellerStatus = serializers.CharField(source='seller_status', read_only=True)
     sellerDiscountPercent = serializers.DecimalField(
         source='seller_discount_percent',
@@ -32,6 +34,8 @@ class UserSummarySerializer(serializers.ModelSerializer):
             'role',
             'businessName',
             'phoneNumber',
+            'location',
+            'tinNumber',
             'sellerStatus',
             'sellerDiscountPercent',
             'joinedAt',
@@ -42,11 +46,13 @@ class SellerCreateSerializer(serializers.ModelSerializer):
     name = serializers.CharField(source='display_name')
     businessName = serializers.CharField(source='business_name')
     phoneNumber = serializers.CharField(source='phone_number', required=True, allow_blank=False)
+    location = serializers.CharField(source='location', required=True, allow_blank=False)
+    tinNumber = serializers.CharField(source='tin_number', required=True, allow_blank=False)
     password = serializers.CharField(write_only=True, min_length=6)
 
     class Meta:
         model = User
-        fields = ['name', 'email', 'businessName', 'phoneNumber', 'password']
+        fields = ['name', 'email', 'businessName', 'phoneNumber', 'location', 'tinNumber', 'password']
 
     def create(self, validated_data):
         password = validated_data.pop('password')
@@ -56,6 +62,8 @@ class SellerCreateSerializer(serializers.ModelSerializer):
             display_name=validated_data.get('display_name', ''),
             business_name=validated_data.get('business_name', ''),
             phone_number=validated_data.get('phone_number', ''),
+            location=validated_data.get('location', 'Addis Ababa'),
+            tin_number=validated_data.get('tin_number', '000000000'),
             seller_discount_percent=PlatformSettings.get_solo().commission_percent,
             role=User.Role.SELLER,
             seller_status=User.SellerStatus.PENDING,
