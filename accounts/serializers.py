@@ -18,6 +18,8 @@ class UserSummarySerializer(serializers.ModelSerializer):
     removed = serializers.BooleanField(source='is_removed', read_only=True)
     removalReason = serializers.CharField(source='removal_reason', read_only=True)
     removedAt = serializers.DateTimeField(source='removed_at', read_only=True)
+    rejectionReason = serializers.CharField(source='rejection_reason', read_only=True)
+    rejectedAt = serializers.DateTimeField(source='rejected_at', read_only=True)
     sellerDiscountPercent = serializers.DecimalField(
         source='seller_discount_percent',
         max_digits=5,
@@ -43,6 +45,8 @@ class UserSummarySerializer(serializers.ModelSerializer):
             'removed',
             'removalReason',
             'removedAt',
+            'rejectionReason',
+            'rejectedAt',
             'sellerDiscountPercent',
             'joinedAt',
         ]
@@ -76,6 +80,8 @@ class SellerCreateSerializer(serializers.ModelSerializer):
             seller_discount_percent=PlatformSettings.get_solo().commission_percent,
             role=User.Role.SELLER,
             seller_status=User.SellerStatus.PENDING,
+            rejection_reason='',
+            rejected_at=None,
         )
 
         admin_users = User.objects.filter(role=User.Role.ADMIN)

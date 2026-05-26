@@ -73,15 +73,20 @@ class SellerViewSet(viewsets.ModelViewSet):
         seller = self.get_object()
         self._ensure_not_removed(seller)
         seller.seller_status = User.SellerStatus.APPROVED
-        seller.save(update_fields=['seller_status'])
+        seller.rejection_reason = ''
+        seller.rejected_at = None
+        seller.save(update_fields=['seller_status', 'rejection_reason', 'rejected_at'])
         return Response(self.get_serializer(seller).data)
 
     @action(detail=True, methods=['post'])
     def reject(self, request, pk=None):
         seller = self.get_object()
         self._ensure_not_removed(seller)
+        reason = str(request.data.get('reason', '')).strip()
         seller.seller_status = User.SellerStatus.REJECTED
-        seller.save(update_fields=['seller_status'])
+        seller.rejection_reason = reason
+        seller.rejected_at = timezone.now()
+        seller.save(update_fields=['seller_status', 'rejection_reason', 'rejected_at'])
         return Response(self.get_serializer(seller).data)
 
     @action(detail=True, methods=['post'])
@@ -105,7 +110,9 @@ class SellerViewSet(viewsets.ModelViewSet):
         seller.removed_at = None
         seller.is_active = True
         seller.seller_status = User.SellerStatus.APPROVED
-        seller.save(update_fields=['is_removed', 'removal_reason', 'removed_at', 'is_active', 'seller_status'])
+        seller.rejection_reason = ''
+        seller.rejected_at = None
+        seller.save(update_fields=['is_removed', 'removal_reason', 'removed_at', 'is_active', 'seller_status', 'rejection_reason', 'rejected_at'])
         return Response(self.get_serializer(seller).data)
 
 

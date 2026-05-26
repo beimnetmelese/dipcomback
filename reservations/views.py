@@ -113,6 +113,7 @@ class ReservationViewSet(viewsets.ModelViewSet):
     def reject(self, request, pk=None):
         self._ensure_admin_or_staff(request)
         reservation = self.get_object()
+        reason = str(request.data.get('reason', '')).strip()
 
         with transaction.atomic():
             reservation = (
@@ -134,7 +135,8 @@ class ReservationViewSet(viewsets.ModelViewSet):
 
             reservation.status = Reservation.Status.REJECTED
             reservation.removed_at = timezone.now()
-            reservation.save(update_fields=['status', 'removed_at'])
+            reservation.rejection_reason = reason
+            reservation.save(update_fields=['status', 'removed_at', 'rejection_reason'])
 
             notify_stock_change(
                 users=User.objects.filter(role__in=[User.Role.ADMIN, User.Role.STAFF]),
@@ -199,6 +201,7 @@ class ReservationViewSet(viewsets.ModelViewSet):
     def public_update_status(self, request, pk=None):
         reservation = self.get_object()
         next_status = str(request.data.get('status', '')).strip().lower()
+        reason = str(request.data.get('reason', '')).strip()
         allowed_statuses = {choice[0] for choice in Reservation.Status.choices}
 
         if next_status not in allowed_statuses:
@@ -228,8 +231,10 @@ class ReservationViewSet(viewsets.ModelViewSet):
                 reservation.product.stock = previous_stock + int(reservation.quantity)
                 reservation.product.save(update_fields=['stock'])
                 reservation.removed_at = timezone.now()
+                reservation.rejection_reason = reason
             elif next_status != Reservation.Status.REJECTED:
                 reservation.removed_at = None
+                reservation.rejection_reason = ''
 
             if next_status == Reservation.Status.DELIVERED:
                 reservation.delivered_at = timezone.now()
@@ -237,7 +242,7 @@ class ReservationViewSet(viewsets.ModelViewSet):
                 reservation.delivered_at = None
 
             reservation.status = next_status
-            reservation.save(update_fields=['status', 'delivered_at', 'removed_at'])
+            reservation.save(update_fields=['status', 'delivered_at', 'removed_at', 'rejection_reason'])
 
         return Response(self.get_serializer(reservation).data)
 

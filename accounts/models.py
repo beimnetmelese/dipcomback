@@ -68,6 +68,8 @@ class User(AbstractUser):
 	is_removed = models.BooleanField(default=False)
 	removal_reason = models.TextField(blank=True, default='')
 	removed_at = models.DateTimeField(null=True, blank=True)
+	rejection_reason = models.TextField(blank=True, default='')
+	rejected_at = models.DateTimeField(null=True, blank=True)
 
 	objects = UserManager()
 

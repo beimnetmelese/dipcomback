@@ -36,6 +36,7 @@ class Reservation(models.Model):
 	created_at = models.DateTimeField(auto_now_add=True)
 	delivered_at = models.DateTimeField(null=True, blank=True)
 	removed_at = models.DateTimeField(null=True, blank=True)
+	rejection_reason = models.TextField(blank=True, default='')
 
 	class Meta:
 		ordering = ['-created_at']

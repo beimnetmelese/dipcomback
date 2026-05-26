@@ -25,6 +25,7 @@ class ReservationSerializer(serializers.ModelSerializer):
     createdAt = serializers.DateTimeField(source='created_at', read_only=True)
     deliveredAt = serializers.DateTimeField(source='delivered_at', read_only=True)
     rejectedAt = serializers.DateTimeField(source='removed_at', read_only=True)
+    rejectionReason = serializers.CharField(source='rejection_reason', read_only=True)
 
     def get_unitPrice(self, obj):
         if not obj.quantity:
@@ -50,6 +51,7 @@ class ReservationSerializer(serializers.ModelSerializer):
             'createdAt',
             'deliveredAt',
             'rejectedAt',
+            'rejectionReason',
         ]
 
 
