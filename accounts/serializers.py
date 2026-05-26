@@ -174,7 +174,7 @@ class EmailTokenObtainPairSerializer(serializers.Serializer):
 
             user = candidate
 
-        if not user.is_active:
+        if not user.is_active and not (user.role == User.Role.SELLER and getattr(user, 'is_removed', False)):
             raise AuthenticationFailed('Account is disabled.')
 
         refresh = RefreshToken.for_user(user)
