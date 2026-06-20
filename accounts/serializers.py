@@ -190,6 +190,26 @@ class ChangePasswordSerializer(serializers.Serializer):
         return user
 
 
+class ResetSellerPasswordSerializer(serializers.Serializer):
+    newPassword = serializers.CharField(write_only=True, min_length=6, trim_whitespace=False)
+    confirmPassword = serializers.CharField(write_only=True, trim_whitespace=False)
+
+    def validate(self, attrs):
+        new_password = attrs.get('newPassword')
+        confirm_password = attrs.get('confirmPassword')
+
+        if new_password != confirm_password:
+            raise serializers.ValidationError({'confirmPassword': 'Passwords do not match.'})
+
+        return attrs
+
+    def save(self, seller):
+        new_password = self.validated_data['newPassword']
+        seller.set_password(new_password)
+        seller.save(update_fields=['password'])
+        return seller
+
+
 class EmailTokenObtainPairSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True)

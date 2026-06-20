@@ -49,3 +49,37 @@ class ChangePasswordViewTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.user.refresh_from_db()
         self.assertTrue(self.user.check_password('newpass456'))
+
+
+class SellerPasswordResetTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.admin = User.objects.create_user(
+            email='admin@example.com',
+            password='adminpass123',
+            role=User.Role.ADMIN,
+            display_name='Admin User',
+        )
+        self.seller = User.objects.create_user(
+            email='seller-reset@example.com',
+            password='oldpass123',
+            role=User.Role.SELLER,
+            display_name='Seller Reset',
+        )
+
+    def test_admin_can_reset_seller_password(self):
+        self.client.force_authenticate(user=self.admin)
+        url = reverse('sellers-reset-password', kwargs={'pk': self.seller.pk})
+
+        response = self.client.post(
+            url,
+            {
+                'newPassword': 'resetpass456',
+                'confirmPassword': 'resetpass456',
+            },
+            format='json',
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.seller.refresh_from_db()
+        self.assertTrue(self.seller.check_password('resetpass456'))

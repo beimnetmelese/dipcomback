@@ -15,6 +15,7 @@ from .serializers import (
     ChangePasswordSerializer,
     CurrentUserSerializer,
     EmailTokenObtainPairSerializer,
+    ResetSellerPasswordSerializer,
     SellerCreateSerializer,
     UserSummarySerializer,
 )
@@ -131,6 +132,20 @@ class SellerViewSet(viewsets.ModelViewSet):
         seller.rejected_at = None
         seller.save(update_fields=['is_removed', 'removal_reason', 'removed_at', 'is_active', 'seller_status', 'rejection_reason', 'rejected_at'])
         return Response(self.get_serializer(seller).data)
+
+    @action(detail=True, methods=['post'])
+    def reset_password(self, request, pk=None):
+        seller = self.get_object()
+        serializer = ResetSellerPasswordSerializer(
+            data=request.data,
+            context={'request': request},
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save(seller)
+        return Response(
+            {'detail': 'Seller password updated successfully.'},
+            status=200,
+        )
 
 
 class AdminAccountViewSet(viewsets.ModelViewSet):
