@@ -12,6 +12,7 @@ from .models import AdminAccount, User
 from .permissions import IsAdminOnly, IsAdminOrStaff
 from .serializers import (
     AdminAccountSerializer,
+    ChangePasswordSerializer,
     CurrentUserSerializer,
     EmailTokenObtainPairSerializer,
     SellerCreateSerializer,
@@ -37,6 +38,22 @@ class CurrentUserView(RetrieveUpdateAPIView):
 
     def get_object(self):
         return self.request.user
+
+
+class ChangePasswordView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = ChangePasswordSerializer(
+            data=request.data,
+            context={'request': request},
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(
+            {'detail': 'Password updated successfully.'},
+            status=200,
+        )
 
 
 class SellerRegistrationView(CreateAPIView):

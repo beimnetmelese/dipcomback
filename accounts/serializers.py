@@ -154,6 +154,42 @@ class AdminAccountSerializer(serializers.ModelSerializer):
         return super().create(validated_data)
 
 
+class ChangePasswordSerializer(serializers.Serializer):
+    currentPassword = serializers.CharField(write_only=True, trim_whitespace=False)
+    newPassword = serializers.CharField(write_only=True, min_length=6, trim_whitespace=False)
+    confirmPassword = serializers.CharField(write_only=True, trim_whitespace=False)
+
+    def validate(self, attrs):
+        request = self.context.get('request')
+        user = request.user if request else None
+
+        if not user or not user.is_authenticated:
+            raise serializers.ValidationError({'detail': 'Authentication is required.'})
+
+        current_password = attrs.get('currentPassword')
+        new_password = attrs.get('newPassword')
+        confirm_password = attrs.get('confirmPassword')
+
+        if not user.check_password(current_password):
+            raise serializers.ValidationError({'currentPassword': 'Current password is incorrect.'})
+
+        if new_password != confirm_password:
+            raise serializers.ValidationError({'confirmPassword': 'Passwords do not match.'})
+
+        if new_password == current_password:
+            raise serializers.ValidationError({'newPassword': 'New password must be different from the current password.'})
+
+        return attrs
+
+    def save(self, **kwargs):
+        request = self.context.get('request')
+        user = request.user if request else None
+        new_password = self.validated_data['newPassword']
+        user.set_password(new_password)
+        user.save(update_fields=['password'])
+        return user
+
+
 class EmailTokenObtainPairSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True)
