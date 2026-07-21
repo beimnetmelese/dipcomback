@@ -1,12 +1,13 @@
 from django import forms
 from django.contrib import admin
+from django.contrib.admin.helpers import ActionForm
 from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
 from django.utils import timezone
 
 from .models import AdminAccount, User
 
 
-class RemovalActionForm(forms.Form):
+class RemovalActionForm(ActionForm):
 	removal_reason = forms.CharField(required=False, widget=forms.Textarea(attrs={'rows': 3}), label='Reason for removal')
 
 
