@@ -57,7 +57,7 @@ class ReservationViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(status__in=[Reservation.Status.PENDING, Reservation.Status.APPROVED])
         elif scope == 'history':
             queryset = queryset.filter(status__in=[Reservation.Status.DELIVERED, Reservation.Status.REJECTED]).annotate(
-                reference_at=Coalesce('delivered_at', 'rejected_at', 'created_at')
+                reference_at=Coalesce('delivered_at', 'removed_at', 'created_at')
             )
             if date_from:
                 queryset = queryset.filter(reference_at__date__gte=date_from)
@@ -76,7 +76,7 @@ class ReservationViewSet(viewsets.ModelViewSet):
     def summary(self, request):
         self._ensure_admin_or_staff(request)
         queryset = Reservation.objects.all().annotate(
-            reference_at=Coalesce('delivered_at', 'rejected_at', 'created_at')
+            reference_at=Coalesce('delivered_at', 'removed_at', 'created_at')
         )
         status_filter = request.query_params.get('status', '').strip()
         date_from = request.query_params.get('dateFrom', '').strip()
