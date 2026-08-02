@@ -49,6 +49,7 @@ class Category(models.Model):
 
 
 class Product(CatalogItemBase):
+	hot_deal = models.BooleanField(default=False)
 	category = models.ForeignKey(
 		Category,
 		on_delete=models.PROTECT,
@@ -67,6 +68,11 @@ class Product(CatalogItemBase):
 
 
 class SellerProduct(CatalogItemBase):
+	class ModerationStatus(models.TextChoices):
+		PENDING = 'pending', 'Pending'
+		APPROVED = 'approved', 'Approved'
+		REJECTED = 'rejected', 'Rejected'
+
 	category = models.ForeignKey(
 		Category,
 		on_delete=models.PROTECT,
@@ -77,6 +83,21 @@ class SellerProduct(CatalogItemBase):
 		on_delete=models.CASCADE,
 		related_name='seller_products',
 	)
+	moderation_status = models.CharField(
+		max_length=20,
+		choices=ModerationStatus.choices,
+		default=ModerationStatus.PENDING,
+	)
+	moderation_note = models.TextField(blank=True, default='')
+	moderated_by = models.ForeignKey(
+		settings.AUTH_USER_MODEL,
+		on_delete=models.SET_NULL,
+		null=True,
+		blank=True,
+		related_name='moderated_seller_products',
+	)
+	moderated_at = models.DateTimeField(null=True, blank=True)
+	is_available = models.BooleanField(default=True)
 
 	def __str__(self):
 		return f'{self.name} - {self.seller_id}'

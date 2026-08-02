@@ -8,22 +8,25 @@ from rest_framework.views import APIView
 from .models import Notification, NotificationDevice
 from .vapid import get_vapid_public_key
 from .serializers import NotificationDeviceSerializer, NotificationSerializer
+from dipcom.pagination import SellerListPagination
 
 
 class NotificationListView(ListAPIView):
 	permission_classes = [IsAuthenticated]
 	serializer_class = NotificationSerializer
+	pagination_class = SellerListPagination
 
 	def get_queryset(self):
-		return Notification.objects.filter(recipient=self.request.user)
+		return Notification.objects.filter(recipient=self.request.user).order_by('-created_at')
 
 
 class NotificationInboxView(ListAPIView):
 	permission_classes = [IsAuthenticated]
 	serializer_class = NotificationSerializer
+	pagination_class = SellerListPagination
 
 	def get_queryset(self):
-		return Notification.objects.filter(recipient=self.request.user, is_read=False)
+		return Notification.objects.filter(recipient=self.request.user, is_read=False).order_by('-created_at')
 
 
 class NotificationMarkReadView(APIView):

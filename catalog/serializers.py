@@ -19,6 +19,7 @@ class ProductSerializer(serializers.ModelSerializer):
     categoryId = serializers.CharField(source='category.id', read_only=True)
     category = serializers.CharField(source='category.name', read_only=True)
     condition = serializers.CharField(read_only=True)
+    hotDeal = serializers.BooleanField(source='hot_deal', read_only=True)
     createdAt = serializers.DateTimeField(source='created_at', read_only=True)
     updatedAt = serializers.DateTimeField(source='updated_at', read_only=True)
 
@@ -31,6 +32,7 @@ class ProductSerializer(serializers.ModelSerializer):
             'stock',
             'brand',
             'condition',
+            'hotDeal',
             'category',
             'categoryId',
             'imageUrl',
@@ -52,6 +54,7 @@ class ProductSerializer(serializers.ModelSerializer):
 class ProductWriteSerializer(serializers.ModelSerializer):
     categoryId = serializers.CharField(write_only=True)
     imageFile = serializers.ImageField(source='image_url', required=False, allow_null=True, write_only=True)
+    hotDeal = serializers.BooleanField(source='hot_deal', required=False)
 
     class Meta:
         model = Product
@@ -64,6 +67,7 @@ class ProductWriteSerializer(serializers.ModelSerializer):
             'categoryId',
             'imageFile',
             'condition',
+            'hotDeal',
         ]
 
     def _resolve_category(self, category_id: str):
@@ -86,9 +90,17 @@ class ProductWriteSerializer(serializers.ModelSerializer):
 
 class SellerProductSerializer(serializers.ModelSerializer):
     sellerId = serializers.UUIDField(source='seller.id', read_only=True)
+    sellerName = serializers.CharField(source='seller.display_name', read_only=True)
+    sellerBusinessName = serializers.CharField(source='seller.business_name', read_only=True)
+    sellerPhoneNumber = serializers.CharField(source='seller.phone_number', read_only=True)
     imageUrl = serializers.SerializerMethodField()
     categoryId = serializers.CharField(source='category.id', read_only=True)
     category = serializers.CharField(source='category.name', read_only=True)
+    moderationStatus = serializers.CharField(source='moderation_status', read_only=True)
+    moderationNote = serializers.CharField(source='moderation_note', read_only=True)
+    moderatedByName = serializers.CharField(source='moderated_by.display_name', read_only=True)
+    moderatedAt = serializers.DateTimeField(source='moderated_at', read_only=True)
+    isAvailable = serializers.BooleanField(source='is_available', read_only=True)
     createdAt = serializers.DateTimeField(source='created_at', read_only=True)
     updatedAt = serializers.DateTimeField(source='updated_at', read_only=True)
 
@@ -97,6 +109,9 @@ class SellerProductSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'sellerId',
+            'sellerName',
+            'sellerBusinessName',
+            'sellerPhoneNumber',
             'name',
             'price',
             'stock',
@@ -105,6 +120,11 @@ class SellerProductSerializer(serializers.ModelSerializer):
             'category',
             'categoryId',
             'imageUrl',
+            'moderationStatus',
+            'moderationNote',
+            'moderatedByName',
+            'moderatedAt',
+            'isAvailable',
             'createdAt',
             'updatedAt',
         ]

@@ -1,7 +1,12 @@
+from django.db.models import F, Sum
 from rest_framework import permissions, viewsets
+from rest_framework.views import APIView
 from rest_framework.response import Response
 
 from accounts.permissions import IsAdminOnly
+from accounts.models import User
+from catalog.models import Category, Product
+from reservations.models import Reservation
 
 from .models import PlatformSettings
 from .serializers import PlatformSettingsSerializer
@@ -29,3 +34,18 @@ class PlatformSettingsViewSet(viewsets.ViewSet):
         return Response(serializer.data)
 
     partial_update = update
+
+
+class AdminDashboardSummaryView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsAdminOnly]
+
+    def get(self, request):
+        products = Product.objects.all()
+        return Response({
+            'totalProducts': products.count(),
+            'stockValue': products.aggregate(value=Sum(F('stock') * F('price')))['value'] or 0,
+            'totalSellers': User.objects.filter(role=User.Role.SELLER).count(),
+            'brands': list(products.values('brand').annotate(units=Sum('stock')).order_by('-units', 'brand')[:6]),
+            'categories': list(Category.objects.values('id', 'name').annotate(units=Sum('products__stock')).order_by('name')),
+            'recentReservations': list(Reservation.objects.values('id', 'product_name', 'seller_name', 'final_total').order_by('-created_at')[:6]),
+        })

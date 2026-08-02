@@ -1,5 +1,6 @@
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Count, Q, Sum
+from django.db.models.functions import Coalesce
 from django.utils import timezone
 from rest_framework import permissions, viewsets
 from rest_framework.decorators import action
@@ -10,6 +11,7 @@ from rest_framework.response import Response
 from accounts.permissions import IsAdminOrStaff
 from accounts.models import User
 from notifications.services import create_notifications, notify_stock_change
+from dipcom.pagination import SellerListPagination
 
 from .models import Reservation
 from .serializers import ReservationCreateSerializer, ReservationSerializer
@@ -18,6 +20,7 @@ from .serializers import ReservationCreateSerializer, ReservationSerializer
 class ReservationViewSet(viewsets.ModelViewSet):
     queryset = Reservation.objects.select_related('product', 'product__category', 'seller').all()
     serializer_class = ReservationSerializer
+    pagination_class = SellerListPagination
 
     def get_permissions(self):
         if self.action in {'public_by_seller_phone', 'public_update_status'}:
@@ -37,6 +40,9 @@ class ReservationViewSet(viewsets.ModelViewSet):
 
         query = self.request.query_params.get('q', '').strip()
         status_filter = self.request.query_params.get('status', '').strip()
+        scope = self.request.query_params.get('scope', '').strip()
+        date_from = self.request.query_params.get('dateFrom', '').strip()
+        date_to = self.request.query_params.get('dateTo', '').strip()
 
         if query:
             queryset = queryset.filter(
@@ -47,12 +53,54 @@ class ReservationViewSet(viewsets.ModelViewSet):
         if status_filter:
             queryset = queryset.filter(status=status_filter)
 
+        if scope == 'active':
+            queryset = queryset.filter(status__in=[Reservation.Status.PENDING, Reservation.Status.APPROVED])
+        elif scope == 'history':
+            queryset = queryset.filter(status__in=[Reservation.Status.DELIVERED, Reservation.Status.REJECTED]).annotate(
+                reference_at=Coalesce('delivered_at', 'rejected_at', 'created_at')
+            )
+            if date_from:
+                queryset = queryset.filter(reference_at__date__gte=date_from)
+            if date_to:
+                queryset = queryset.filter(reference_at__date__lte=date_to)
+            return queryset.order_by('-reference_at')
+
         return queryset.order_by('-created_at')
 
     def get_serializer_class(self):
         if self.action == 'create':
             return ReservationCreateSerializer
         return ReservationSerializer
+
+    @action(detail=False, methods=['get'], url_path='summary')
+    def summary(self, request):
+        self._ensure_admin_or_staff(request)
+        queryset = Reservation.objects.all().annotate(
+            reference_at=Coalesce('delivered_at', 'rejected_at', 'created_at')
+        )
+        status_filter = request.query_params.get('status', '').strip()
+        date_from = request.query_params.get('dateFrom', '').strip()
+        date_to = request.query_params.get('dateTo', '').strip()
+        if status_filter:
+            queryset = queryset.filter(status=status_filter)
+        if date_from:
+            queryset = queryset.filter(reference_at__date__gte=date_from)
+        if date_to:
+            queryset = queryset.filter(reference_at__date__lte=date_to)
+
+        totals = queryset.aggregate(units=Sum('quantity'), value=Sum('final_total'))
+        sellers = queryset.values('seller_id', 'seller_name').annotate(
+            reservations=Count('id'), units=Sum('quantity'), value=Sum('final_total')
+        ).order_by('-value')
+        return Response({
+            'totalUnits': totals['units'] or 0,
+            'totalValue': totals['value'] or 0,
+            'sellers': [{
+                'sellerId': item['seller_id'], 'sellerName': item['seller_name'],
+                'reservations': item['reservations'], 'units': item['units'] or 0,
+                'value': item['value'] or 0,
+            } for item in sellers],
+        })
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data, context={'request': request})

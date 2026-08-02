@@ -31,6 +31,14 @@ def notification_title_and_message(kind: str, item_name: str):
 		return f'Low stock: {item_name}', f'{item_name} stock is below {LOW_STOCK_THRESHOLD}.'
 	if kind == Notification.Kind.SELLER_REGISTERED:
 		return 'New seller registered', f'{item_name} created a new seller account.'
+	if kind == Notification.Kind.SELLER_PRODUCT_SUBMITTED:
+		return 'Seller post submitted', f'{item_name} is waiting for approval.'
+	if kind == Notification.Kind.SELLER_PRODUCT_APPROVED:
+		return 'Seller post approved', f'{item_name} was approved and published.'
+	if kind == Notification.Kind.SELLER_PRODUCT_REJECTED:
+		return 'Seller post rejected', f'{item_name} was rejected by the review team.'
+	if kind == Notification.Kind.SELLER_PRODUCT_UNAVAILABLE:
+		return 'Seller post hidden', f'{item_name} was marked unavailable.'
 	if kind == Notification.Kind.RESERVATION_CREATED:
 		return 'New reservation request', f'A seller reserved {item_name}.'
 	if kind == Notification.Kind.RESERVATION_APPROVED:

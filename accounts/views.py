@@ -19,6 +19,7 @@ from .serializers import (
     SellerCreateSerializer,
     UserSummarySerializer,
 )
+from dipcom.pagination import SellerListPagination
 
 
 class LoginView(APIView):
@@ -66,6 +67,7 @@ class SellerViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated, IsAdminOrStaff]
     serializer_class = UserSummarySerializer
     http_method_names = ['get', 'put', 'patch', 'delete', 'post', 'head', 'options']
+    pagination_class = SellerListPagination
 
     def get_queryset(self):
         queryset = User.objects.filter(role=User.Role.SELLER).order_by('-date_joined')
@@ -73,10 +75,18 @@ class SellerViewSet(viewsets.ModelViewSet):
         status_filter = self.request.query_params.get('status', '').strip()
 
         if query:
-            queryset = queryset.filter(display_name__icontains=query) | queryset.filter(business_name__icontains=query) | queryset.filter(email__icontains=query)
+            from django.db.models import Q
+            queryset = queryset.filter(
+                Q(display_name__icontains=query) | Q(business_name__icontains=query) |
+                Q(email__icontains=query) | Q(phone_number__icontains=query) |
+                Q(location__icontains=query) | Q(tin_number__icontains=query)
+            )
 
-        if status_filter == 'removed':
+        removed_filter = self.request.query_params.get('removed', '').strip()
+        if removed_filter == 'true' or status_filter == 'removed':
             queryset = queryset.filter(is_removed=True)
+        elif removed_filter == 'false':
+            queryset = queryset.filter(is_removed=False)
         elif status_filter in {User.SellerStatus.PENDING, User.SellerStatus.APPROVED, User.SellerStatus.REJECTED}:
             queryset = queryset.filter(seller_status=status_filter)
 
