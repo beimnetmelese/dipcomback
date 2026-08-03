@@ -14,6 +14,7 @@ class CatalogItemBase(models.Model):
 	price = models.DecimalField(max_digits=10, decimal_places=2)
 	stock = models.PositiveIntegerField(default=0)
 	brand = models.CharField(max_length=120)
+	description = models.TextField(blank=True, default='')
 	class Condition(models.TextChoices):
 		NEW = 'new', 'Brand New'
 		USED = 'used', 'Used'

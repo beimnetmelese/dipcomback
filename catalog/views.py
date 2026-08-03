@@ -57,7 +57,7 @@ class ProductViewSet(viewsets.ModelViewSet):
         brand = self.request.query_params.get('brand', '').strip()
 
         if query:
-            queryset = queryset.filter(name__icontains=query) | queryset.filter(brand__icontains=query) | queryset.filter(category__name__icontains=query)
+            queryset = queryset.filter(name__icontains=query) | queryset.filter(brand__icontains=query) | queryset.filter(description__icontains=query) | queryset.filter(category__name__icontains=query)
 
         if category:
             queryset = queryset.filter(category__name=category)
@@ -206,7 +206,7 @@ class PublicShopViewSet(viewsets.ViewSet):
         products = Product.objects.select_related('category').all()
         seller_products = SellerProduct.objects.select_related('category', 'seller').filter(moderation_status=SellerProduct.ModerationStatus.APPROVED, is_available=True)
         if query:
-            search = Q(name__icontains=query) | Q(brand__icontains=query) | Q(category__name__icontains=query)
+            search = Q(name__icontains=query) | Q(brand__icontains=query) | Q(description__icontains=query) | Q(category__name__icontains=query)
             products, seller_products = products.filter(search), seller_products.filter(search)
         if category_id:
             products, seller_products = products.filter(category_id=category_id), seller_products.filter(category_id=category_id)
@@ -307,7 +307,7 @@ class SellerProductViewSet(viewsets.ModelViewSet):
         if query:
             queryset = queryset.filter(
                 name__icontains=query,
-            ) | queryset.filter(brand__icontains=query) | queryset.filter(category__name__icontains=query)
+            ) | queryset.filter(brand__icontains=query) | queryset.filter(description__icontains=query) | queryset.filter(category__name__icontains=query)
 
         if category:
             queryset = queryset.filter(category__name=category)
