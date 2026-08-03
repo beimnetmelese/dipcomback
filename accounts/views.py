@@ -114,7 +114,14 @@ class SellerViewSet(viewsets.ModelViewSet):
         seller.seller_status = User.SellerStatus.REJECTED
         seller.rejection_reason = reason
         seller.rejected_at = timezone.now()
-        seller.save(update_fields=['seller_status', 'rejection_reason', 'rejected_at'])
+        seller.is_removed = True
+        seller.removal_reason = reason
+        seller.removed_at = timezone.now()
+        seller.is_active = False
+        seller.save(update_fields=[
+            'seller_status', 'rejection_reason', 'rejected_at',
+            'is_removed', 'removal_reason', 'removed_at', 'is_active',
+        ])
         return Response(self.get_serializer(seller).data)
 
     @action(detail=True, methods=['post'])
